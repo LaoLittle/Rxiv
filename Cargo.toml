@@ -1,0 +1,20 @@
+[package]
+name = "rxel"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+native-tls = "0"
+
+[dependencies.tokio]
+version = "1"
+features = ["sync", "rt-multi-thread", "time"]
+
+[dependencies.reqwest]
+version = "0"
+features = ["native-tls", "cookies", "trust-dns", "serde_json", "json"]
