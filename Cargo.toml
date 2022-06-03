@@ -21,3 +21,11 @@ version = "4"
 [dependencies.reqwest]
 version = "0"
 features = ["native-tls", "cookies", "trust-dns", "serde_json", "json"]
+
+[profile.release]
+lto = true
+debug = false
+opt-level = 3
+incremental = false
+strip = true
+codegen-units = 1
