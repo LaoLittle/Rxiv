@@ -1,16 +1,14 @@
-use std::collections::HashMap;
-use std::fs::{create_dir, File, OpenOptions};
-use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
-use std::sync::Arc;
+use std::net::{Ipv4Addr, SocketAddrV4};
+
 use native_tls::TlsConnector;
-use reqwest::{Certificate, Client, ClientBuilder, header, IntoUrl, Proxy};
+use reqwest::{Client, ClientBuilder, header, IntoUrl};
 use reqwest::header::{HeaderMap, HeaderValue};
-use reqwest::redirect::Policy;
+
 use crate::api::ApiResponse;
 use crate::api::illust_info::IllustPages;
 
 pub struct PixivClient {
-    http_client: Client
+    http_client: Client,
 }
 
 impl PixivClient {
@@ -32,11 +30,11 @@ impl PixivClient {
             .cookie_store(true)
             .no_proxy()
             .use_preconfigured_tls(connector)
-            .resolve("www.pixiv.net", SocketAddrV4::new(Ipv4Addr::new(210,140,131,199), 443).into())
-            .resolve("app-api.pixiv.net", SocketAddrV4::new(Ipv4Addr::new(210,140,131,199), 443).into())
-            .resolve("oauth.secure.pixiv.net", SocketAddrV4::new(Ipv4Addr::new(210,140,131,219), 443).into())
-            .resolve("i.pximg.net", SocketAddrV4::new(Ipv4Addr::new(210,140,92,144), 443).into())
-            .resolve("s.pximg.net", SocketAddrV4::new(Ipv4Addr::new(210,140,92,143), 443).into())
+            .resolve("www.pixiv.net", SocketAddrV4::new(Ipv4Addr::new(210, 140, 131, 199), 443).into())
+            .resolve("app-api.pixiv.net", SocketAddrV4::new(Ipv4Addr::new(210, 140, 131, 199), 443).into())
+            .resolve("oauth.secure.pixiv.net", SocketAddrV4::new(Ipv4Addr::new(210, 140, 131, 219), 443).into())
+            .resolve("i.pximg.net", SocketAddrV4::new(Ipv4Addr::new(210, 140, 92, 144), 443).into())
+            .resolve("s.pximg.net", SocketAddrV4::new(Ipv4Addr::new(210, 140, 92, 143), 443).into())
             .build().unwrap();
 
         Self {

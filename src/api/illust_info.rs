@@ -1,6 +1,6 @@
-use std::thread::sleep;
-use serde_json::{Value};
 use serde::Deserialize;
+use serde_json::Value;
+
 use crate::api::ApiResponse;
 
 #[derive(Deserialize, Debug)]
@@ -80,7 +80,7 @@ pub struct IllustInfo {
     is_unlisted: bool,
     request: Value,
     #[serde(rename = "commentOff")]
-    comment_off: u8
+    comment_off: u8,
 }
 
 impl IllustInfo {
@@ -118,7 +118,7 @@ impl<'a> TryInto<IllustInfo> for ApiResponse {
 pub struct IllustPages {
     urls: PageUrls,
     width: u16,
-    height: u16
+    height: u16,
 }
 
 impl IllustPages {

@@ -1,10 +1,9 @@
 extern crate reqwest;
 
-use std::thread;
+
 use std::time::Duration;
 
 use actix_web::{get, HttpResponse, Responder};
-use actix_web::http::StatusCode;
 
 pub mod client;
 mod api;
@@ -21,16 +20,16 @@ pub async fn hello() -> impl Responder {
 #[cfg(test)]
 mod tests {
     use std::fs::File;
-    use std::io::{Read, Write};
+    use std::io::Write;
     use std::sync::Arc;
     use std::time::SystemTime;
-    use serde::{Serialize, Deserialize};
-    use serde_json::{json, Value};
 
+    use serde::{Deserialize, Serialize};
+    use serde_json::json;
     use tokio::runtime::{Builder, Runtime};
+
     use crate::api::ApiResponse;
     use crate::api::illust_info::IllustInfo;
-
     use crate::client::PixivClient;
 
     #[test]
@@ -45,7 +44,7 @@ mod tests {
         rt.block_on(async {
             let p = p;
             let pp = p.clone();
-            let b0 = rt0.spawn(async move {
+            let _b0 = rt0.spawn(async move {
                 let pr = SystemTime::now();
 
                 //let res = pp.client().get("https://i.pximg.net/img-original/img/2021/12/17/00/00/03/94819771_p0.png").send().await;
@@ -85,7 +84,7 @@ mod tests {
         rt.block_on(async {
             let p = p;
             let pp = p.clone();
-            let b0 = rt0.spawn(async move {
+            let _b0 = rt0.spawn(async move {
                 let pr = SystemTime::now();
 
                 //let res = pp.client().get("https://i.pximg.net/img-original/img/2021/12/17/00/00/03/94819771_p0.png").send().await;

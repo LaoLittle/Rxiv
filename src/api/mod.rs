@@ -1,9 +1,9 @@
-pub mod illust_info;
+use std::fmt::Debug;
 
-use std::fmt::{Debug, Display, Formatter};
 use serde::Deserialize;
 use serde_json::Value;
-use crate::api::illust_info::IllustPages;
+
+pub mod illust_info;
 
 #[derive(Deserialize, Debug)]
 pub struct ApiResponse {
@@ -40,6 +40,7 @@ impl ApiResponse {
     }
 }
 
+#[derive(Debug)]
 pub struct ApiError {
     message: String,
 }
@@ -49,17 +50,5 @@ impl ApiError {
         ApiError {
             message: msg.to_string()
         }
-    }
-}
-
-impl Debug for ApiError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
-    }
-}
-
-impl Display for ApiError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
     }
 }

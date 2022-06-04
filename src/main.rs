@@ -1,20 +1,13 @@
-use std::alloc::System;
-use std::env;
 use std::ffi::OsStr;
-use std::fs::{create_dir, create_dir_all, File};
-use std::io::{BufRead, Read, stdin, Write};
-use std::net::{SocketAddr, SocketAddrV6};
-use std::path::{Path, PathBuf};
-use std::process::id;
+use std::fs::{create_dir, File};
+use std::io::{BufRead, stdin, StdinLock, Write};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::SystemTime;
-use actix_web::{App, HttpServer};
-use actix_web::rt::Runtime;
-use reqwest::tls::Version;
-use tokio::runtime;
-use rxiv::client::PixivClient;
-use rxiv::hello;
 
+use tokio::runtime;
+
+use rxiv::client::PixivClient;
 
 fn main() {
     let runtime = runtime::Builder::new_multi_thread()
@@ -23,11 +16,66 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut dir = PathBuf::from("./images");
+    fn clear_and_read(buf: &mut String, stdin: &mut StdinLock) -> std::io::Result<usize> {
+        buf.clear();
+        stdin.read_line(buf)
+    }
+
+    println!("Successfully started");
+    let client = PixivClient::new();
+    let client = Arc::new(client);
+    let mut stdin = stdin().lock();
+    let mut buf = String::new();
+
+    let dir = PathBuf::from("images");
 
     if !dir.is_dir() { create_dir(&dir).unwrap(); }
 
-    runtime.block_on(async {
+    while let Ok(_) = clear_and_read(&mut buf, &mut stdin) {
+        let str = buf.trim_end();
+
+        match str {
+            "exit" => {
+                println!("?");
+                break;
+            }
+            _ => {}
+        }
+
+        let id: u32 = match str.parse() {
+            Ok(id) => id,
+            Err(e) => {
+                eprintln!("{}", e);
+                continue;
+            }
+        };
+
+        let mut dir = dir.clone();
+        let client = client.clone();
+        runtime.spawn(async move {
+            let pages = client.illust_pages(id).await.unwrap();
+            println!("Get {:?}", pages);
+            let mut index = 0;
+            for page in pages {
+                let prev = SystemTime::now();
+                let pic_url = page.urls().original();
+                println!("Start download {}", pic_url);
+                let res = client.client().get(pic_url).send().await.unwrap();
+                let bytes = res.bytes().await.unwrap();
+
+                dir.push(format!("{}_p{}.png", id, index));
+                index += 1;
+
+                let mut file = File::create(&dir).unwrap();
+                file.write(&bytes).unwrap();
+                let now = SystemTime::now();
+                println!("Successfully downloaded {}, Cost {} sec", <PathBuf as AsRef<OsStr>>::as_ref(&dir).to_str().unwrap(), now.duration_since(prev).unwrap().as_secs_f32());
+                dir.pop();
+            }
+        });
+    }
+
+    /*runtime.block_on(async {
         println!("Successfully started");
         let client = PixivClient::new();
         let mut stdin = stdin().lock();
@@ -77,7 +125,7 @@ fn main() {
                 dir.pop();
             }
         }
-    });
+    });*/
     /*let server = HttpServer::new(|| {
         App::new()
             .service(hello)
