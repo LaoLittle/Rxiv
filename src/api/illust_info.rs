@@ -42,12 +42,8 @@ pub struct IllustInfo {
     height: u16,
     #[serde(rename = "pageCount")]
     page_count: u16,
-    #[serde(rename = "bookmarkCount")]
-    bookmark_count: u32,
     #[serde(rename = "likeCount")]
     like_count: u32,
-    #[serde(rename = "commentCount")]
-    comment_count: u32,
     #[serde(rename = "responseCount")]
     response_count: u32,
     #[serde(rename = "pollData")]
@@ -63,9 +59,11 @@ pub struct IllustInfo {
     #[serde(rename = "fanboxPromotion")]
     fanbox_promotion: Value,
     #[serde(rename = "contestBanners")]
-    contest_banners: Value,
+    contest_banners: Vec<Value>,
     #[serde(rename = "isBookmarkable")]
     is_bookmarkable: bool,
+    #[serde(rename = "bookmarkCount")]
+    bookmark_count: u32,
     #[serde(rename = "bookmarkData")]
     bookmark_data: Value,
     #[serde(rename = "contestData")]
@@ -78,7 +76,13 @@ pub struct IllustInfo {
     title_caption_translation: Value,
     #[serde(rename = "isUnlisted")]
     is_unlisted: bool,
+    #[serde(rename = "isHowto")]
+    is_howto: bool,
+    #[serde(rename = "isOriginal")]
+    is_original: bool,
     request: Value,
+    #[serde(rename = "commentCount")]
+    comment_count: u32,
     #[serde(rename = "commentOff")]
     comment_off: u8,
 }

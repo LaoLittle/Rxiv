@@ -23,6 +23,9 @@ impl PixivClient {
         header.insert("App-OS-Version", HeaderValue::from_static("15.5"));
         header.insert("App-Version", HeaderValue::from_static("7.14.8"));
 
+        //header.insert("authority", HeaderValue::from_static("www.pixiv.net"));
+        //header.insert("upgrade-insecure-requests", HeaderValue::from(1));
+
         let client = ClientBuilder::new()
             .default_headers(header)
             //.user_agent("PixivIOSApp/6.0.4 (iOS 9.0.2; iPhone6,1)")

@@ -1,145 +1,105 @@
-use std::ffi::OsStr;
-use std::fs::{create_dir, File};
-use std::io::{BufRead, stdin, StdinLock, Write};
+use std::fs::create_dir;
+use std::io::{BufRead, stdin, StdinLock};
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::SystemTime;
+use std::thread;
 
+use actix_web::{App, HttpServer, web};
 use tokio::runtime;
 
+use rxiv::{download_full, info, pp, root};
 use rxiv::client::PixivClient;
+use rxiv::web_server::AppData;
 
 fn main() {
     let runtime = runtime::Builder::new_multi_thread()
         .enable_all()
-        .worker_threads(23)
+        .worker_threads(24)
         .build()
         .unwrap();
 
-    fn clear_and_read(buf: &mut String, stdin: &mut StdinLock) -> std::io::Result<usize> {
-        buf.clear();
-        stdin.read_line(buf)
-    }
+    let runtime = Arc::new(runtime);
+    let runtime_li = runtime.clone();
 
     println!("Successfully started");
-    let client = PixivClient::new();
-    let client = Arc::new(client);
-    let mut stdin = stdin().lock();
-    let mut buf = String::new();
 
-    let dir = PathBuf::from("images");
+    let data = AppData {
+        pixiv_client: Arc::new(Default::default())
+    };
 
-    if !dir.is_dir() { create_dir(&dir).unwrap(); }
+    let handle = thread::spawn(move || {
+        let port = 8080;
 
-    while clear_and_read(&mut buf, &mut stdin).is_ok() {
-        let str = buf.trim_end();
+        let server = HttpServer::new(move || {
+            App::new()
+                .app_data(web::Data::new(data.clone()))
+                .service(info)
+                .service(root)
+                .service(pp)
+        })
+            .bind(("127.0.0.1", port))
+            .unwrap_or_else(|e| panic!("{e:?}, Cannot bind port {}", port))
+            .run();
 
-        match str {
-            "exit" => {
-                println!("?");
-                break;
-            }
-            _ => {}
-        }
+        let handle = server.handle();
 
-        let id: u32 = match str.parse() {
-            Ok(id) => id,
-            Err(e) => {
-                eprintln!("{}", e);
-                continue;
-            }
-        };
-
-        let mut dir = dir.clone();
-        let client = client.clone();
-        runtime.spawn(async move {
-            let pages = client.illust_pages(id).await.unwrap();
-            println!("Get {:?}", pages);
-            for (index, page) in pages.into_iter().enumerate() {
-                let prev = SystemTime::now();
-                let pic_url = page.urls().original();
-                println!("Start download {}", pic_url);
-                let res = client.client().get(pic_url).send().await.unwrap();
-                let bytes = res.bytes().await.unwrap();
-
-                dir.push(format!("{}_p{}.png", id, index));
-
-                let mut file = File::create(&dir).unwrap();
-                file.write_all(&bytes).unwrap();
-                let now = SystemTime::now();
-                println!("Successfully downloaded {}, Cost {} sec", <PathBuf as AsRef<OsStr>>::as_ref(&dir).to_str().unwrap(), now.duration_since(prev).unwrap().as_secs_f32());
-                dir.pop();
-            }
+        let rt = runtime_li.clone();
+        runtime_li.spawn(async move {
+            if let Err(e) = rt.spawn(async move {
+                println!("Successfully started server, listening on {port}");
+                server.await.unwrap();
+            }).await {
+                println!("Unable to start server {e:?}");
+            };
         });
-    }
 
-    /*runtime.block_on(async {
-        println!("Successfully started");
+
         let client = PixivClient::new();
+        let client = Arc::new(client);
         let mut stdin = stdin().lock();
         let mut buf = String::new();
 
-        while let Ok(_) = stdin.read_line(&mut buf) {
+        let mut dir = PathBuf::from("images");
+        if !dir.is_dir() { create_dir(&dir).unwrap(); }
+        dir.push("cache");
+        if !dir.is_dir() { create_dir(&dir).unwrap(); }
+
+        fn clear_and_read(buf: &mut String, stdin: &mut StdinLock) -> std::io::Result<usize> {
+            buf.clear();
+            stdin.read_line(buf)
+        }
+
+        let rt = runtime_li;
+        while clear_and_read(&mut buf, &mut stdin).is_ok() {
             let str = buf.trim_end();
 
             match str {
-                "exit" => {
-                    println!("?");
+                "exit" | "stop" => {
+                    println!("Stopping...");
+                    rt.block_on(async move {
+                        handle.stop(true).await
+                    });
                     break;
                 }
-                _ => {
 
-                }
+                _ => {}
             }
 
             let id: u32 = match str.parse() {
                 Ok(id) => id,
                 Err(e) => {
-                    buf.clear();
                     eprintln!("{}", e);
-                    continue
+                    continue;
                 }
             };
 
-            buf.clear();
-
-            let pages = client.illust_pages(id).await.unwrap();
-            println!("Get {:?}", pages);
-            let mut index = 0;
-            for page in pages {
-                let prev = SystemTime::now();
-                let pic_url = page.urls().original();
-                println!("Start download {}", pic_url);
-                let res = client.client().get(pic_url).send().await.unwrap();
-                let bytes = res.bytes().await.unwrap();
-
-                dir.push(format!("{}_p{}.png", id, index));
-                index += 1;
-
-                let mut file = File::create(&dir).unwrap();
-                file.write(&bytes).unwrap();
-                let now = SystemTime::now();
-                println!("Successfully downloaded {}, Cost {} sec", <PathBuf as AsRef<OsStr>>::as_ref(&dir).to_str().unwrap(), now.duration_since(prev).unwrap().as_secs_f32());
-                dir.pop();
-            }
+            let client = client.clone();
+            rt.spawn(async move {
+                download_full(&*client, id).await.unwrap();
+            });
         }
-    });*/
-    /*let server = HttpServer::new(|| {
-        App::new()
-            .service(hello)
-    }).bind(("127.0.0.1", 8848)).unwrap().run();
+    });
 
-    let client = reqwest::Client::builder()
-        .build().expect("Cannot build client");
-
-    let c = client.post("").body("").build().expect("");
-    client.get("").send();
-
-    let a: i32 = 1.into();
-
-    println!("Hello, world!");
-
-    runtime.block_on(async {
-        server.await.expect("TODO: panic message");
-    })*/
+    handle.join().unwrap();
+    drop(runtime);
 }
