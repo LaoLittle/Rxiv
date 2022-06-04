@@ -60,3 +60,9 @@ impl PixivClient {
         Ok(page)
     }
 }
+
+impl Default for PixivClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}

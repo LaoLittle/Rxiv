@@ -31,7 +31,7 @@ fn main() {
 
     if !dir.is_dir() { create_dir(&dir).unwrap(); }
 
-    while let Ok(_) = clear_and_read(&mut buf, &mut stdin) {
+    while clear_and_read(&mut buf, &mut stdin).is_ok() {
         let str = buf.trim_end();
 
         match str {
@@ -55,8 +55,7 @@ fn main() {
         runtime.spawn(async move {
             let pages = client.illust_pages(id).await.unwrap();
             println!("Get {:?}", pages);
-            let mut index = 0;
-            for page in pages {
+            for (index, page) in pages.into_iter().enumerate() {
                 let prev = SystemTime::now();
                 let pic_url = page.urls().original();
                 println!("Start download {}", pic_url);
@@ -64,10 +63,9 @@ fn main() {
                 let bytes = res.bytes().await.unwrap();
 
                 dir.push(format!("{}_p{}.png", id, index));
-                index += 1;
 
                 let mut file = File::create(&dir).unwrap();
-                file.write(&bytes).unwrap();
+                file.write_all(&bytes).unwrap();
                 let now = SystemTime::now();
                 println!("Successfully downloaded {}, Cost {} sec", <PathBuf as AsRef<OsStr>>::as_ref(&dir).to_str().unwrap(), now.duration_since(prev).unwrap().as_secs_f32());
                 dir.pop();
