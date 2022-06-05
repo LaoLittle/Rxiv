@@ -6,6 +6,7 @@ use reqwest::header::{HeaderMap, HeaderValue};
 
 use crate::api::ApiResponse;
 use crate::api::illust_info::IllustPages;
+use crate::api::rank::Rank;
 
 pub struct PixivClient {
     http_client: Client,
@@ -49,15 +50,31 @@ impl PixivClient {
         &self.http_client
     }
 
-    pub async fn get_api<U: IntoUrl>(&self, url: U) -> Result<ApiResponse, reqwest::Error> {
+    pub async fn get_api<U: IntoUrl>(&self, url: U) -> reqwest::Result<ApiResponse> {
         let response = self.client().get(url).send().await?;
-        let bytes = response.bytes().await.unwrap();
-        let api_res: ApiResponse = serde_json::from_slice(&bytes[..]).unwrap();
+        let api_res = ApiResponse::from_http_response(response).await;
 
         Ok(api_res)
     }
 
-    pub async fn illust_pages(&self, id: u32) -> Result<Vec<IllustPages>, reqwest::Error> {
+    pub async fn rank(&self, page: u16) -> reqwest::Result<Rank> {
+        let page = page.to_string();
+
+        /*let mut params = HashMap::new();
+        params.insert("format", "json");
+        params.insert("p", page.as_str());*/
+
+        let response = self.client().get(format!("https://www.pixiv.net/ranking.php?format=json&p={}", page))
+            .header("user-agent", HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36 Edg/91.0.864.37"))
+            //.form(&params)
+            .send()
+            .await?;
+
+        let rank: Rank = serde_json::from_value(response.json().await?).unwrap();
+        Ok(rank)
+    }
+
+    pub async fn illust_pages(&self, id: u32) -> reqwest::Result<Vec<IllustPages>> {
         let response = self.get_api(format!("https://www.pixiv.net/ajax/illust/{}/pages?lang=zh", id)).await?;
         let page: Vec<IllustPages> = serde_json::from_value(response.body()).unwrap();
         Ok(page)
