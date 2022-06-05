@@ -88,7 +88,7 @@ pub struct IllustInfo {
 }
 
 impl IllustInfo {
-    pub fn illust_id(&self) -> u64 {
+    pub fn illust_id(&self) -> u32 {
         self.illust_id.parse().unwrap()
     }
 
@@ -100,7 +100,7 @@ impl IllustInfo {
         self.illust_comment.as_str()
     }
 
-    pub fn id(&self) -> u64 {
+    pub fn id(&self) -> u32 {
         self.id.parse().unwrap()
     }
 
@@ -128,6 +128,10 @@ pub struct IllustPages {
 impl IllustPages {
     pub fn urls(&self) -> &PageUrls {
         &self.urls
+    }
+
+    pub fn image_info(&self) -> (u16, u16) {
+        (self.width, self.height)
     }
 }
 

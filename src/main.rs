@@ -2,7 +2,7 @@ use std::fs::create_dir;
 use std::io::{BufRead, stdin, StdinLock};
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::thread;
+use std::{fs, thread};
 
 use actix_web::{App, HttpServer, web};
 use tokio::runtime;
@@ -20,6 +20,11 @@ fn main() {
 
     let runtime = Arc::new(runtime);
     let runtime_li = runtime.clone();
+
+    let mut dir = PathBuf::from("images");
+    if !dir.is_dir() { create_dir(&dir).unwrap(); }
+    dir.push("cache");
+    if !dir.is_dir() { create_dir(&dir).unwrap(); }
 
     println!("Successfully started");
 
@@ -59,11 +64,6 @@ fn main() {
         let mut stdin = stdin().lock();
         let mut buf = String::new();
 
-        let mut dir = PathBuf::from("images");
-        if !dir.is_dir() { create_dir(&dir).unwrap(); }
-        dir.push("cache");
-        if !dir.is_dir() { create_dir(&dir).unwrap(); }
-
         fn clear_and_read(buf: &mut String, stdin: &mut StdinLock) -> std::io::Result<usize> {
             buf.clear();
             stdin.read_line(buf)
@@ -101,5 +101,7 @@ fn main() {
     });
 
     handle.join().unwrap();
+
+    if dir.is_dir() { fs::remove_dir_all(&dir).unwrap(); }
     drop(runtime);
 }

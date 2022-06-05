@@ -4,7 +4,7 @@ use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{PathBuf};
 use std::time::SystemTime;
 
 use actix_web::{get, web};
@@ -42,24 +42,21 @@ pub async fn download_full(client: &PixivClient, id: u32) -> reqwest::Result<()>
     let mut cache = image.clone();
     cache.push("cache");
 
-    for page in pages {
+    image.push("0");
+    cache.push("0");
+
+    for page in pages.iter() {
         let pic_url = page.urls().original();
 
         let file_name = pic_url.split('/').last().unwrap();
 
+        image.pop();
+        cache.pop();
+
         image.push(file_name);
-
-        if image.is_file() {
-            image.pop();
-            continue;
-        }
-
         cache.push(file_name);
 
-        if cache.is_file() {
-            cache.pop();
-            continue;
-        }
+        if image.is_file() || cache.is_file() { continue; }
 
         println!("Start download {}", pic_url);
 
@@ -72,18 +69,14 @@ pub async fn download_full(client: &PixivClient, id: u32) -> reqwest::Result<()>
             file.write_all(&chunk).unwrap();
         }
 
-        drop(file);
-
-        if let Err(e) = fs::copy(&cache, &image) {
-            eprintln!("Unable to copy file: {e}")
-        }
+        if let Err(e) = fs::copy(&cache, &image) { eprintln!("Unable to copy file: {e}") }
+        else { fs::remove_file(&cache).expect("Cache file doesn't exist"); }
 
         let now = SystemTime::now();
         println!("Successfully downloaded {}, cost {} sec", <PathBuf as AsRef<OsStr>>::as_ref(&image).to_str().unwrap(), now.duration_since(prev).unwrap().as_secs_f32());
-
-        image.pop();
-        cache.pop();
     }
+
+    println!("All {} pages of PID({}) have been downloaded", pages.len(), id);
 
     Ok(())
 }
@@ -232,14 +225,9 @@ mod tests {
 
         rt.block_on(async move {
             let pr = SystemTime::now();
-            let res = p.client().get("https://www.pixiv.net/ranking.php?p=1&format=json")
-                .header("user-agent", HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36 Edg/91.0.864.37"))
-                .send().await;
-            let res = res.unwrap();
+            let rank = p.rank(2).await.unwrap();
 
-            let json: Value = res.json().await.unwrap();
-
-            println!("{:#}", json);
+            println!("{:#?}", rank);
             let now = SystemTime::now();
             println!("Cost: {:?}", now.duration_since(pr).unwrap());
         });

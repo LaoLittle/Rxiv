@@ -4,6 +4,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 pub mod illust_info;
+pub mod rank;
 
 #[derive(Deserialize, Debug)]
 pub struct ApiResponse {
@@ -19,6 +20,11 @@ impl ApiResponse {
 
     pub fn from_slice(b: &[u8]) -> serde_json::Result<Self> {
         serde_json::from_slice(b)
+    }
+
+    pub async fn from_http_response(res: reqwest::Response) -> Self {
+        let bytes = res.bytes().await.unwrap();
+        serde_json::from_slice(&bytes[..]).unwrap()
     }
 
     pub fn is_err(&self) -> bool {
