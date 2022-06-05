@@ -28,7 +28,7 @@ fn main() {
 
         for line in str.split('\n') {
             let mut s: Vec<&str> = line.split('=').collect();
-            if s.len() < 2 { panic!("Properties file unknown") }
+            if s.len() < 2 { continue; }
 
             let first = s.swap_remove(0);
 
