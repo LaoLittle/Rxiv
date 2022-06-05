@@ -29,6 +29,9 @@ impl PixivClient {
 
         let client = ClientBuilder::new()
             .default_headers(header)
+            .gzip(true)
+            .brotli(true)
+            .deflate(true)
             //.user_agent("PixivIOSApp/6.0.4 (iOS 9.0.2; iPhone6,1)")
             .user_agent("PixivIOSApp/7.14.8 (iOS 15.5; iPhone14,5)")
             .cookie_store(true)

@@ -1,5 +1,7 @@
 use std::ffi::OsStr;
+use std::ops::Deref;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::time::SystemTime;
 
 use tokio::fs;
@@ -13,7 +15,17 @@ mod api;
 pub mod web_server;
 
 pub async fn download_full(client: &PixivClient, id: u32) -> reqwest::Result<()> {
-    let pages = client.illust_pages(id).await.unwrap();
+    let pages = client.illust_pages(id).await?;
+
+    enum A {
+        B
+    }
+
+    let mut a = 1;
+
+    let dd = &a;
+    let bb = &mut a;
+
 
     let mut image = PathBuf::from("images");
 
@@ -34,7 +46,8 @@ pub async fn download_full(client: &PixivClient, id: u32) -> reqwest::Result<()>
         image.push(file_name);
         cache.push(file_name);
 
-        if image.is_file() || cache.is_file() { continue; }
+        if image.is_file() { continue; }
+        if cache.is_file() { return Ok(()); }
 
         println!("Start download {}", pic_url);
 

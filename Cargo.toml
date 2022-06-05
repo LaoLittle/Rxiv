@@ -31,7 +31,10 @@ features = [
     "cookies",
     "trust-dns",
     "serde_json",
-    "json"
+    "json",
+    "gzip",
+    "brotli",
+    "deflate"
 ]
 
 [profile.release]
