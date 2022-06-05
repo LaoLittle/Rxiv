@@ -1,7 +1,8 @@
 use std::{fs, thread};
-use std::fs::create_dir;
-use std::io::{BufRead, stdin, StdinLock};
-use std::path::PathBuf;
+use std::collections::HashMap;
+use std::fs::{create_dir, File, OpenOptions};
+use std::io::{BufRead, Read, stdin, StdinLock, Write};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use actix_web::{App, HttpServer, web};
@@ -13,6 +14,26 @@ use rxiv::web_server::*;
 use rxiv::web_server::AppData;
 
 fn main() {
+    let config = HashMap::<String, String>::new();
+
+    let _config_file = Path::new("server.properties");
+
+    let (mut address,mut port) = ("127.0.0.1".to_string(), 8848);
+    if !_config_file.is_file() {
+        File::create(_config_file).unwrap().write_all(b"address=127.0.0.1\nport=8848").unwrap();
+    }
+    else {
+        let mut str = String::new();
+        File::open(_config_file).unwrap().read_to_string(&mut str).expect("Cannot open file");
+
+        for line in str.split('\n') {
+            let mut s: Vec<&str> = line.split('=').collect();
+            if s.len() < 2 { panic!("Properties file unknown") }
+            if "address" == s.swap_remove(0) { address = s.swap_remove(0).to_string(); }
+            if "port" == s.swap_remove(0) { port = s.swap_remove(0).parse().unwrap(); }
+        };
+    }
+
     let runtime = runtime::Builder::new_multi_thread()
         .enable_all()
         .worker_threads(24)
@@ -34,7 +55,6 @@ fn main() {
     };
 
     let handle = thread::spawn(move || {
-        let port = 8080;
 
         let server = HttpServer::new(move || {
             App::new()
@@ -43,7 +63,7 @@ fn main() {
                 .service(rank)
                 .service(get_illust)
         })
-            .bind(("127.0.0.1", port))
+            .bind((address.as_str(), port))
             .unwrap_or_else(|e| panic!("{e:?}, Cannot bind port {}", port))
             .run();
 
