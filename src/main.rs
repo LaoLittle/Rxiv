@@ -1,14 +1,15 @@
+use std::{fs, thread};
 use std::fs::create_dir;
 use std::io::{BufRead, stdin, StdinLock};
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::{fs, thread};
 
 use actix_web::{App, HttpServer, web};
 use tokio::runtime;
 
-use rxiv::{download_full, info, pp, root};
 use rxiv::client::PixivClient;
+use rxiv::download_full;
+use rxiv::web_server::*;
 use rxiv::web_server::AppData;
 
 fn main() {
@@ -39,8 +40,8 @@ fn main() {
             App::new()
                 .app_data(web::Data::new(data.clone()))
                 .service(info)
-                .service(root)
-                .service(pp)
+                .service(rank)
+                .service(get_illust)
         })
             .bind(("127.0.0.1", port))
             .unwrap_or_else(|e| panic!("{e:?}, Cannot bind port {}", port))

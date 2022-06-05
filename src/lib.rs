@@ -1,38 +1,16 @@
-extern crate reqwest;
-
 use std::ffi::OsStr;
-use std::fs;
-use std::fs::File;
-use std::io::Write;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use std::time::SystemTime;
 
-use actix_web::{get, web};
+use tokio::fs;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 
 use crate::client::PixivClient;
-use crate::web_server::AppData;
 
 pub mod client;
 mod api;
 pub mod web_server;
-
-#[get("/info/i={p}")]
-pub async fn info(id: web::Path<u32>, data: web::Data<AppData>) -> actix_web::Result<String> {
-    let client = &data.pixiv_client;
-    let pages = client.illust_pages(id.into_inner());
-
-    Ok(format!("{:?}", pages.await.unwrap()))
-}
-
-#[get("/")]
-pub async fn root() -> String {
-    String::from("Hello!")
-}
-
-#[get("/path/{str}")]
-pub async fn pp(str: web::Path<String>) -> String {
-    format!("Hello! {str}")
-}
 
 pub async fn download_full(client: &PixivClient, id: u32) -> reqwest::Result<()> {
     let pages = client.illust_pages(id).await.unwrap();
@@ -63,14 +41,13 @@ pub async fn download_full(client: &PixivClient, id: u32) -> reqwest::Result<()>
         let prev = SystemTime::now();
         let mut res = client.client().get(pic_url).send().await?;
 
-        let mut file = File::create(&cache).unwrap();
+        let mut file = File::create(&cache).await.unwrap();
 
         while let Some(chunk) = res.chunk().await? {
-            file.write_all(&chunk).unwrap();
+            file.write_all(&chunk).await.unwrap();
         }
 
-        if let Err(e) = fs::copy(&cache, &image) { eprintln!("Unable to copy file: {e}") }
-        else { fs::remove_file(&cache).expect("Cache file doesn't exist"); }
+        if let Err(e) = fs::copy(&cache, &image).await { eprintln!("Unable to copy file: {e}") } else { fs::remove_file(&cache).await.expect("Cache file doesn't exist"); }
 
         let now = SystemTime::now();
         println!("Successfully downloaded {}, cost {} sec", <PathBuf as AsRef<OsStr>>::as_ref(&image).to_str().unwrap(), now.duration_since(prev).unwrap().as_secs_f32());
@@ -83,15 +60,14 @@ pub async fn download_full(client: &PixivClient, id: u32) -> reqwest::Result<()>
 
 #[cfg(test)]
 mod tests {
+    use std::{fs, thread};
     use std::fs::File;
     use std::io::Write;
     use std::sync::Arc;
-    use std::thread;
     use std::time::SystemTime;
 
-    use reqwest::header::HeaderValue;
     use serde::{Deserialize, Serialize};
-    use serde_json::{json, Value};
+    use serde_json::json;
     use tokio::runtime::{Builder, Runtime};
 
     use crate::api::ApiResponse;
@@ -263,6 +239,15 @@ mod tests {
                 assert_eq!(*lao, [11, 45, 14, 19, 19, 81, 0])
             });
             //以上就是Arc的用法了，不知道大家都明白了么
+        }
+    }
+
+    #[test]
+    fn entry() {
+        let dir = fs::read_dir(".").unwrap();
+
+        for entry in dir {
+            println!("{:?}", entry.unwrap().file_name());
         }
     }
 
