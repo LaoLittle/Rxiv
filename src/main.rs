@@ -29,8 +29,11 @@ fn main() {
         for line in str.split('\n') {
             let mut s: Vec<&str> = line.split('=').collect();
             if s.len() < 2 { panic!("Properties file unknown") }
-            if "address" == s.swap_remove(0) { address = s.swap_remove(0).to_string(); }
-            if "port" == s.swap_remove(0) { port = s.swap_remove(0).parse().unwrap(); }
+
+            let first = s.swap_remove(0);
+
+            if "address" == first { address = s.swap_remove(0).to_string(); }
+            if "port" == first { port = s.swap_remove(0).parse().unwrap(); }
         };
     }
 
