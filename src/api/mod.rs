@@ -24,7 +24,7 @@ impl ApiResponse {
 
     pub async fn from_http_response(res: reqwest::Response) -> Self {
         let bytes = res.bytes().await.unwrap();
-        serde_json::from_slice(&bytes[..]).unwrap()
+        serde_json::from_slice(&bytes).unwrap()
     }
 
     pub fn is_err(&self) -> bool {
@@ -56,5 +56,9 @@ impl ApiError {
         ApiError {
             message: msg.to_string()
         }
+    }
+    
+    pub fn message(&self) -> &str {
+        &self.message
     }
 }

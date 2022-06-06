@@ -33,12 +33,10 @@ pub struct Content {
     height: u16,
     user_id: u32,
     rank: u16,
-    yes_rank: u16,
-    // prev
+    yes_rank: u16, // prev
     rating_count: u16,
     view_count: u32,
-    illust_upload_timestamp: u32,
-    // second
+    illust_upload_timestamp: u32, // seconds
     attr: String,
     #[serde(default)]
     is_bookmarked: bool,

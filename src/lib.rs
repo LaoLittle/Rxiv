@@ -1,7 +1,7 @@
 use std::ffi::OsStr;
-use std::ops::Deref;
+
 use std::path::PathBuf;
-use std::rc::Rc;
+
 use std::time::SystemTime;
 
 use tokio::fs;
@@ -17,18 +17,7 @@ pub mod web_server;
 pub async fn download_full(client: &PixivClient, id: u32) -> reqwest::Result<()> {
     let pages = client.illust_pages(id).await?;
 
-    enum A {
-        B
-    }
-
-    let mut a = 1;
-
-    let dd = &a;
-    let bb = &mut a;
-
-
     let mut image = PathBuf::from("images");
-
     let mut cache = image.clone();
     cache.push("cache");
 
@@ -74,12 +63,16 @@ pub async fn download_full(client: &PixivClient, id: u32) -> reqwest::Result<()>
 #[cfg(test)]
 mod tests {
     use std::{fs, thread};
+
     use std::fs::File;
     use std::io::Write;
+
+
     use std::sync::Arc;
     use std::time::SystemTime;
 
-    use serde::{Deserialize, Serialize};
+
+    use serde::{Deserialize};
     use serde_json::json;
     use tokio::runtime::{Builder, Runtime};
 
@@ -169,13 +162,17 @@ mod tests {
 
         rt.block_on(async move {
             let pr = SystemTime::now();
-            let res = p.client().get("https://i.pximg.net/img-original/img/2021/12/17/00/00/03/94819771_p0.png").send().await;
+            // 140-149
+            let res = p.client().get("https://210.140.92.143/img-original/img/2021/12/17/00/00/03/94819771_p0.png")
+                //.header("Host", "https://i.pximg.net")
+                .send().await;
             let res = res.unwrap();
+            println!("{}", res.status());
 
-            let b = res.bytes().await.unwrap();
-            println!("{}", b.len());
+            let bytes = res.bytes().await.unwrap();
             let mut f = File::create("i0.png").unwrap();
-            f.write_all(&b[..]).expect("");
+            f.write_all(&bytes).expect("TODO: panic message");
+
             let now = SystemTime::now();
             println!("Cost: {:?}", now.duration_since(pr).unwrap());
         });
@@ -187,12 +184,6 @@ mod tests {
         let p = PixivClient::new();
 
         rt.block_on(async move {
-            #[derive(Debug, Serialize, Deserialize)]
-            struct A {
-                inn: i32,
-                will: String,
-            }
-
             let res = p.client()
                 .post("https://oauth.secure.pixiv.net/auth/token")
                 .body("{}")

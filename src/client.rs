@@ -16,6 +16,7 @@ impl PixivClient {
     pub fn new() -> PixivClient {
         let connector = TlsConnector::builder()
             .use_sni(false)
+            .danger_accept_invalid_certs(true)
             .build().unwrap();
 
         let mut header = HeaderMap::new();
@@ -23,19 +24,19 @@ impl PixivClient {
         header.insert("APP-OS", HeaderValue::from_static("ios"));
         header.insert("App-OS-Version", HeaderValue::from_static("15.5"));
         header.insert("App-Version", HeaderValue::from_static("7.14.8"));
+        header.insert(header::USER_AGENT, HeaderValue::from_static("PixivIOSApp/7.14.8 (iOS 15.5; iPhone14,5)"));
 
         //header.insert("authority", HeaderValue::from_static("www.pixiv.net"));
         //header.insert("upgrade-insecure-requests", HeaderValue::from(1));
 
         let client = ClientBuilder::new()
+            .no_proxy()
             .default_headers(header)
             .gzip(true)
             .brotli(true)
             .deflate(true)
             //.user_agent("PixivIOSApp/6.0.4 (iOS 9.0.2; iPhone6,1)")
-            .user_agent("PixivIOSApp/7.14.8 (iOS 15.5; iPhone14,5)")
             .cookie_store(true)
-            .no_proxy()
             .use_preconfigured_tls(connector)
             .resolve("www.pixiv.net", SocketAddrV4::new(Ipv4Addr::new(210, 140, 131, 199), 443).into())
             .resolve("app-api.pixiv.net", SocketAddrV4::new(Ipv4Addr::new(210, 140, 131, 199), 443).into())
